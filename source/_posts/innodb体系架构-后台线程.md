@@ -3,7 +3,10 @@ title: innodb体系架构 --后台线程
 date: 2019-08-31 14:59:57
 tags: 数据库
 ---
-&#160;&#160;&#160;&#160;&#160;&#160;作为mysql的默认数据库引擎，innodb一直是很多大公司后台免费数据库引擎的首选。innodb的强大之处得益于它的架构设计。本篇文章将介绍innodb引擎的的后台线程设计，在讲到后台线程设计之前，先来看看innodb的整体架构设计(图)。innodb的架构分为两层，一层是后台的线程，可以认为它是数据库程序，数据处理都是这些线程在执行。innodb存储引擎内存中主要是以不同的数据结构存储相应的数据，数据来源是下面的磁盘文件。它的作用是在用户执行数据库操作时，保证磁盘文件内相应的数据在这部分内存中，从而加速数据操作。
+&#160;&#160;&#160;&#160;&#160;&#160;作为mysql的默认数据库引擎，innodb一直是很多大公司后台免费数据库引擎的首选。innodb的强大之处得益于它的架构设计。本篇文章将介绍innodb引擎的的后台线程设计，在讲到后台线程设计之前，先来看看innodb的整体架构设计。innodb的架构分为两层，一层是后台的线程，可以认为它是数据库程序，数据处理都是这些线程在执行。innodb存储引擎内存中主要是以不同的数据结构存储相应的数据，数据来源是下面的磁盘文件。它的作用是在用户执行数据库操作时，保证磁盘文件内相应的数据在这部分内存中，从而加速数据操作。
+<div align= center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/innodb%E4%BD%93%E7%B3%BB%E6%9E%B6%E6%9E%84-%E5%90%8E%E5%8F%B0%E7%BA%BF%E7%A8%8B/innodb%E6%9E%B6%E6%9E%84.png?raw=true" width="300">
+</div>
 ### 后台线程
 
 #### 1.Master Thread
@@ -30,8 +33,14 @@ tags: 数据库
 3) 跳到主循环(一定会做)
 4) 不断的刷新100个页直到符合条件(跳转到刷新循环(flush loop))
 
-如果最终flush loop中也没有任何事情可以做，就会直接跳转到暂停循环中将Master Thread 进行挂起，等待下一次的用户操作。整个过程的伪代码如下所示（1,2）：
+如果最终flush loop中也没有任何事情可以做，就会直接跳转到暂停循环中将Master Thread 进行挂起，等待下一次的用户操作。整个过程的伪代码如下所示：
 
+<div align= center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/innodb%E4%BD%93%E7%B3%BB%E6%9E%B6%E6%9E%84-%E5%90%8E%E5%8F%B0%E7%BA%BF%E7%A8%8B/1.png?raw=true" width="600">
+<div>
+<div align= center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/innodb%E4%BD%93%E7%B3%BB%E6%9E%B6%E6%9E%84-%E5%90%8E%E5%8F%B0%E7%BA%BF%E7%A8%8B/2.png?raw=true" width="600">
+<div>
 
 &#160;&#160;&#160;&#160;&#160;&#160;但是随着计算机硬件的增强，IO阻塞问题不在是限制数据库性能的最大瓶颈，反而是硬编码中每次按条件处理的页数量。即每次处理的最大数据量没有触碰到计算机硬件的最大极限。于是基于该问题，做了如下几个方面的调整：
 
@@ -39,7 +48,11 @@ tags: 数据库
 2） 当脏页的数目超过最大脏页设定值，将通过Redo log产生的速度来决定最终要刷新的脏页数目
 3） 最后一个改变是回收Undo页的时候至少为20个
 
-经过改进之后的伪代码为(3)：
+经过改进之后的伪代码为：
+
+<div align= center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/innodb%E4%BD%93%E7%B3%BB%E6%9E%B6%E6%9E%84-%E5%90%8E%E5%8F%B0%E7%BA%BF%E7%A8%8B/3.png?raw=true" width="600">
+<div>
 
 最后在InnoDB 1.2.x中进一步进行改进，对于新脏页的处理方式直接分配给 Page Cleaner Thread 来做，进一步利用了计算机硬件，加快了处理速度，并且降低了Master Thread的处理压力。
 
