@@ -1,5 +1,5 @@
 ---
-title: mysql常用命令
+title: mysql常用命令(一)
 date: 2019-09-28 11:29:03
 tags: mysql
 ---

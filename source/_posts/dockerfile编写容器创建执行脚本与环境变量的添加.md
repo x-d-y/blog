@@ -116,4 +116,9 @@ ENV LD_LABRIRY_PATH /home/xdy/xxx/lib
 <div align=center>
 <img src="https://github.com/x-d-y/blog/blob/master/source/_posts/dockerfile%E7%BC%96%E5%86%99%E5%AE%B9%E5%99%A8%E5%88%9B%E5%BB%BA%E6%89%A7%E8%A1%8C%E8%84%9A%E6%9C%AC%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%9A%84%E6%B7%BB%E5%8A%A0/911490-20171208222222062-849020400.png?raw=true" width = 600>
 </div>
+
+镜像批量打包:
+    ```
+    docker save $(docker images | grep -v REPOSITORY | awk 'BEGIN{OFS=":";ORS=" "}{print $1,$2}') -o image.tar
+    ```
 ### 持续更新中
