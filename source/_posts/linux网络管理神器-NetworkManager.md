@@ -3,18 +3,24 @@ title: linux网络管理神器--NetworkManager
 date: 2019-10-25 16:45:48
 tags:
 ---
+
 ### （一）背景
-&#160;&#160;&#160;&#160;&#160;&#160;Centos8已经发布，本着新东西要试一试的态度安装了Centos8的虚拟机。看看有什么新的功能，在刚安好Centos8后，和Centos7一样，发现不能上网。于是按照Centos7的步骤进行网络设置，最简单的一种方式就是:
+
+&#160;&#160;&#160;&#160;&#160;&#160;Centos8 已经发布，本着新东西要试一试的态度安装了 Centos8 的虚拟机。看看有什么新的功能，在刚安好 Centos8 后，发现和 Centos7 一样不能上网。于是按照 Centos7 的步骤进行网络设置，最简单的一种方式就是:
+
 ```
 vi /etc/sysconfig/network-scripts/ifcfg-ens33 将ONBOOT=no 改为 ONBOOT=yes。
 然后
 systemctl restart network.service
 ```
+
 但是发现服务不存在。
 
-&#160;&#160;&#160;&#160;&#160;&#160;经过查阅才知道，从Centos7开始，就已经支持networkManager配置网络。但是我（包括身边和网上其他人）在大部分时候都在使用network.service+配置文件 这种方式在配置网络。记得去年在甲方的机房里，因为要配置网络，在配置文件里写一堆，通宵配好多台机器，各种ip、路由、网关、bound等。如果去年就会使用networkManager可能就不用通宵写配置文件了。
-&#160;&#160;&#160;&#160;&#160;&#160;趁着这次探索Centos8的机会，了解了networkManager这个神器，先来看看官方的意图。Centos在8已经默认去掉network.service的方式管理网络，但是依然支持network.service方式进行网络管理，需要自己下载相关组件。从下一个大版本(Centos9还是Centos8.1?)将不再支持network.service的方式进行网络管理。看来官方已经决定大力推广networkManager进行网络管理了。再来看看它的优点：
+&#160;&#160;&#160;&#160;&#160;&#160;经过查阅才知道，从 Centos7 开始，就已经支持 networkManager 配置网络。但是我（包括身边和网上其他人）在大部分时候都在使用 network.service+配置文件 这种方式在配置网络。记得去年在甲方的机房里，因为要配置网络，在配置文件里写一堆，通宵配好多台机器，各种 ip、路由、网关、bound 等。如果去年就会使用 networkManager 可能就不用通宵写配置文件了。
+&#160;&#160;&#160;&#160;&#160;&#160;趁着这次探索 Centos8 的机会，了解了 networkManager 这个神器，先来看看官方的意图。Centos 在 8 已经默认去掉 network.service 的方式管理网络，但是依然支持 network.service 方式进行网络管理，需要自己下载相关组件。从下一个大版本(Centos9 还是 Centos8.1?)将不再支持 network.service 的方式进行网络管理。看来官方已经决定大力推广 networkManager 进行网络管理了。再来看看它的优点：
+
 <!--more-->
+
 ```
 一：
   支持四种方式进行网络管理：
@@ -35,15 +41,19 @@ systemctl restart network.service
   支持主流的linux发行版本，RedHat系、Suse系、Debian/Ubuntu系
 
 ```
-就不难发现为什么Redhat/Centos在大力推广这玩意儿了。
+
+就不难发现为什么 Redhat/Centos 在大力推广这玩意儿了。
 
 ### (二)本文重点
-- nmcli的基础使用
-- nmtui的基础使用
-- 分别在Centos和Ubuntu上进行实验
+
+- nmcli 的基础使用
+- nmtui 的基础使用
+- 分别在 Centos 和 Ubuntu 上进行实验
 
 ### (三)nmcli
-nmcli 为network manager client的缩写
+
+nmcli 为 network manager client 的缩写
+
 ```
 $ nmcli
  ens33: connected to ens33
@@ -81,14 +91,17 @@ Use "nmcli device show" to get complete information about known devices and
 
 Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage details.
 ```
-列出所有的硬件设备以及其配置情况
-#### nmcli connection命令
 
-&#160;&#160;&#160;&#160;&#160;&#160;通常简写为nmcli c 命令，该命令是关于连接操作的。
+列出所有的硬件设备以及其配置情况
+
+#### nmcli connection 命令
+
+&#160;&#160;&#160;&#160;&#160;&#160;通常简写为 nmcli c 命令，该命令是关于连接操作的。
 
 - 为网卡添加网络配置
 
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;一个网卡可以添加多个配置，但每个网卡每次只能执行一个配置，添加配置命令如下：
+
 ```
 nmcli c add type ethernet con-name ethX ifname ethX ipv4.addr 192.168.1.100/24 ipv4.gateway 192.168.1.1 ipv4.method manual
 
@@ -99,21 +112,27 @@ nmcli c add type ethernet con-name ethX ifname ethX ipv4.addr 192.168.1.100/24 i
 - ipv4.gateway: ipv4网关
 - ipv4.method: ipv4网络方式(手动、自动获取)
 ```
-在centos上添加：
+
+在 centos 上添加：
+
 ```
 $ nmcli c add type ethernet con-name ens33-copy ifname ens33 ipv4.addr 192.168.1.100/24 ipv4.gateway 192.168.1.1 ipv4.method manual
 ```
-使用 nmcli c查询详情：
+
+使用 nmcli c 查询详情：
+
 ```
 $ nmcli c
-NAME        UUID                                  TYPE      DEVICE 
-ens33       c836911c-237c-46e1-ad05-e39d73af870c  ethernet  ens33  
-virbr0      282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0 
-ens33-copy  10a24608-6849-4599-bbb3-326b54c9c530  ethernet  --     
+NAME        UUID                                  TYPE      DEVICE
+ens33       c836911c-237c-46e1-ad05-e39d73af870c  ethernet  ens33
+virbr0      282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0
+ens33-copy  10a24608-6849-4599-bbb3-326b54c9c530  ethernet  --
 ```
-可以发现 TYPE类型中有一个刚刚创建的ens33-copy
 
-使用nmcli查询ens33网卡的状态：
+可以发现 TYPE 类型中有一个刚刚创建的 ens33-copy
+
+使用 nmcli 查询 ens33 网卡的状态：
+
 ```
 $ nmcli
 
@@ -123,43 +142,52 @@ ens33: connected to ens33
         ip4 default
         inet4 172.16.168.128/24
 ```
-ip为92.168.85.133
+
+ip 为 92.168.85.133
+
 - 开启与停止配置
 
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;刚刚在ens33网卡上创建了ens33-copy配置，此时ens33网卡有两个配置，配置名分别为ens33和ens33-copy。使用nmcli c up <配置名> 和 nmcli c down <配置名>启动与停止配置。当一张网卡有两个配置时，如果停止其中正在使用的配置，会默认启动停止前为使用的配置。
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;刚刚在 ens33 网卡上创建了 ens33-copy 配置，此时 ens33 网卡有两个配置，配置名分别为 ens33 和 ens33-copy。使用 nmcli c up <配置名> 和 nmcli c down <配置名>启动与停止配置。当一张网卡有两个配置时，如果停止其中正在使用的配置，会默认启动停止前为使用的配置。
+
 ```
 $ nmcli c down ens33
 $ nmcli c
 
-NAME        UUID                                  TYPE      DEVICE 
-ens33-copy  10a24608-6849-4599-bbb3-326b54c9c530  ethernet  ens33   
-virbr0      282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0 
-ens33       c836911c-237c-46e1-ad05-e39d73af870c  ethernet  --  
+NAME        UUID                                  TYPE      DEVICE
+ens33-copy  10a24608-6849-4599-bbb3-326b54c9c530  ethernet  ens33
+virbr0      282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0
+ens33       c836911c-237c-46e1-ad05-e39d73af870c  ethernet  --
 ```
-可以看到关闭ens33配置后ens33网卡自动切换到ens33-copy上
+
+可以看到关闭 ens33 配置后 ens33 网卡自动切换到 ens33-copy 上
+
 ```
 $ nmcli c up ens33
 $ nmcli c
 
-NAME        UUID                                  TYPE      DEVICE 
-ens33       c836911c-237c-46e1-ad05-e39d73af870c  ethernet  ens33  
-virbr0      282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0 
-ens33-copy  10a24608-6849-4599-bbb3-326b54c9c530  ethernet  --     
+NAME        UUID                                  TYPE      DEVICE
+ens33       c836911c-237c-46e1-ad05-e39d73af870c  ethernet  ens33
+virbr0      282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0
+ens33-copy  10a24608-6849-4599-bbb3-326b54c9c530  ethernet  --
 
 ```
-ens33网卡切换回ens33配置
+
+ens33 网卡切换回 ens33 配置
 
 - 删除网络配置
+
 ```
 $ nmcli c delete ens33-copy
 $ nmcli c
 
-NAME    UUID                                  TYPE      DEVICE 
-ens33   c836911c-237c-46e1-ad05-e39d73af870c  ethernet  ens33  
-virbr0  282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0 
+NAME    UUID                                  TYPE      DEVICE
+ens33   c836911c-237c-46e1-ad05-e39d73af870c  ethernet  ens33
+virbr0  282772fc-e9e5-4280-9df8-602d950a612d  bridge    virbr0
 
 ```
+
 - 修改网络(非交互式)
+
 ```
 $ nmcli c modify ens33 ipv4.addr '192.168.85.133/24'
 $ nmcli c
@@ -171,7 +199,9 @@ ens33: connected to ens33
         inet4 192.168.85.133/24
 
 ```
+
 - 修改网络(交互式)
+
 ```
 $nmcli c edit ens33
 
@@ -201,7 +231,8 @@ Connection 'ens33' (c836911c-237c-46e1-ad05-e39d73af870c) successfully updated.
 nmcli ipv4> activate
 
 ```
- - 对硬件设备的操作
+
+- 对硬件设备的操作
 
 ```
 $ nmcli d show
@@ -230,26 +261,41 @@ $ nmcli d disconnect ethX --与网卡设备断开连接
 
 ### nmtui
 
-&#160;&#160;&#160;&#160;&#160;&#160;这个就是对应的ternimal UI,个人比较倾向与这种配置方法，命令行有时候记不住命令，使用这个完美解决健忘症的烦恼。
+&#160;&#160;&#160;&#160;&#160;&#160;这个就是对应的 ternimal UI,个人比较倾向与这种配置方法，命令行有时候记不住命令，使用这个完美解决健忘症的烦恼。
+
 ```
 $ nmtui
 ```
 
+选择 Edit a connection:
 
-选择Edit a connection:
+<div align=center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/linux网络管理神器-NetworkManager/nmtui.png?raw=true" width = 500>
+</div>
+再选择编辑 ens33对名称为ens33的配置进行配置
+<div align=center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/linux网络管理神器-NetworkManager/edit_a_connection.png?raw=true" width = 500>
+</div>
+等设置完后退出，添加一条 ens33 网卡的配置 ens33-copy:
+<div align=center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/linux网络管理神器-NetworkManager/add.png?raw=true" width = 500>
+</div>
+可以看到可添加的类型很多，还有网卡 bound,如果没有这个配置，采用配置文件配置 bound 是相当麻烦的：
+<div align=center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/linux%E7%BD%91%E7%BB%9C%E7%AE%A1%E7%90%86%E7%A5%9E%E5%99%A8-NetworkManager/add2.png?raw=true" width = 500>
+</div>
 
-
-再选择编辑ens33:
-
-添加一条ens33网卡的配置ens33-copy:
-
-可以看到可添加的类型很多，还有网卡bound,如果没有这个配置，采用配置文件配置bound是相当麻烦的：
-
-按esc后退选择 Activate a connection:
-
+<div align=center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/linux%E7%BD%91%E7%BB%9C%E7%AE%A1%E7%90%86%E7%A5%9E%E5%99%A8-NetworkManager/add_edit.png?raw=true" width = 500>
+</div>
+按 esc 后退选择 Activate a connection:
+<div align=center>
+<img src="https://github.com/x-d-y/blog/blob/master/source/_posts/linux网络管理神器-NetworkManager/activate.png?raw=true" width = 500>
+</div>
 打星号为已经选择的配置
 
-在Centos7中打开网络需要修改配置文件，再重启网络，使用nmtui只需要选择activate就可以使用网络，不再需要繁琐的编辑文件。使用nmtui激活ens33后打开ifcfg-ens33显示ONBOOT=no，并不是yes
+在 Centos7 中打开网络需要修改配置文件，再重启网络，使用 nmtui 只需要选择 activate 就可以使用网络，不再需要繁琐的编辑文件。使用 nmtui 激活 ens33 后打开 ifcfg-ens33 显示 ONBOOT=no，并不是 yes
+
 ```
 TYPE=Ethernet
 PROXY_METHOD=none
@@ -268,10 +314,7 @@ DEVICE=ens33
 ONBOOT=no
 
 ```
+
 ### (四) 总结
 
-经过短时间的学习，个人觉得networkmanager的学习成本相比较于学习修改配置文件然后再重启网络服务而言是不高的，而且nmtui 简直就是神器，可以直接在terminal进行使用，所以桌面配置和web配置就不做介绍了。再次感谢redhat提供了该软件并进行大力推广。
-
-
-
-
+经过短时间的学习，个人觉得 networkmanager 的学习成本相比较于学习修改配置文件然后再重启网络服务而言是不高的，而且 nmtui 简直就是神器，可以直接在 terminal 进行使用，所以桌面配置和 web 配置就不做介绍了。再次感谢 redhat 提供了该软件并进行大力推广。
